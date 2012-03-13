@@ -147,17 +147,13 @@ class Discipline2_WithDerivatives(ComponentWithDerivatives):
         
            
 class SellarProblem(OptProblem):
-    """ Sellar test problem definition."""
-    
-    def __init__(self):
-        """ Creates a new Assembly with this problem
+    """ Sellar test problem definition.
+    Creates a new Assembly with this problem
         
-        Optimal Design at (1.9776, 0, 0)
+    Optimal Design at (1.9776, 0, 0) 
+    Optimal Objective = 3.18339"""
         
-        Optimal Objective = 3.18339"""
-        
-        super(SellarProblem, self).__init__()
-        
+    def configure(self):         
         #add the discipline components to the assembly
         self.add('dis1', Discipline1())
         self.add('dis2', Discipline2())
