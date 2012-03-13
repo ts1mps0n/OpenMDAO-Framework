@@ -85,6 +85,7 @@ class SubSystemOpt(Assembly):
             name = "global_%d"%i
             self.var_map[p.target] = name
             self.add_trait(name,Float(0.0,iotype="in",desc="global design var for %s"%p.target.split(".")[-1]))
+                        
             self.connect(name,p.target) #promote the global des vars
             setattr(self,name,self.get(p.target))
     
@@ -295,4 +296,15 @@ class BLISS2000(Architecture):
             s2='%s_store'%l[0]
             self.parent.add(s2,Float(0.0)) 
             driver.add_parameter(s2 , low=l[1].low, high=l[1].high)
-            driver.add_constraint('%s = %s'%(system_var_map[l[1].target],s2))             
+            driver.add_constraint('%s = %s'%(system_var_map[l[1].target],s2))       
+            
+            
+if __name__=="__main__": 
+    
+    from openmdao.lib.optproblems.api import UnitScalableProblem
+    
+    p = UnitScalableProblem()
+    
+    p.architecture = BLISS2000()
+    
+    p.run()

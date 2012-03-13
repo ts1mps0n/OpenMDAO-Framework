@@ -18,9 +18,8 @@ class Discipline(Component):
                     desc="coefficient for the output variables")
     
     def __init__(self,prob_size=1): 
-        
         super(Discipline,self).__init__()        
-        
+
         self.add_trait("z",Array(zeros((prob_size,1)),iotype="in",
                                  desc="global varaibles",
                                  shape=(prob_size,1)))
