@@ -400,7 +400,7 @@ class Component (Container):
         valids = self._valid_dict
         for name in self.list_outputs(valid=False):
             valids[name] = True
-        # make sure our inputs are valid too
+        ## make sure our inputs are valid too
         for name in self.list_inputs(valid=False):
             valids[name] = True
         self._call_execute = False
@@ -545,7 +545,7 @@ class Component (Container):
             return False
         if self.parent is not None:
             srccomps = [n for n,v in self.get_expr_sources()]
-            if len(srccomps):
+            if srccomps:
                 counts = self.parent.exec_counts(srccomps)
                 for count,tup in zip(counts, self._expr_sources):
                     if count != tup[1]:
@@ -716,7 +716,7 @@ class Component (Container):
                     
         super(Component, self).connect(srcpath, destpath)
         
-        # move this to after the super connect call so if there's a 
+        # this is after the super connect call so if there's a 
         # problem we don't have to undo it
         if valids_update is not None:
             self._valid_dict[valids_update[0]] = valids_update[1]
@@ -732,7 +732,7 @@ class Component (Container):
             if '.' in destpath:
                 del self._valid_dict[destpath]
             else:
-                self._valid_dict[destpath] = True  # disconnected inputs are always valid
+                self._valid_dict[destpath] = True  # disconnected boundary outputs are always valid
         self.config_changed(update_parent=False)
     
     @rbac(('owner', 'user'))
@@ -1293,6 +1293,7 @@ class Component (Container):
         """Stop this component."""
         self._stop = True
 
+    @rbac(('owner', 'user'))
     def get_valid(self, names):
         """Get the value of the validity flag for the specified variables.
         Returns a list of bools.
@@ -1333,9 +1334,10 @@ class Component (Container):
                 valids[var] = False
         else:
             conn = self.list_inputs(connected=True)
-            for var in varnames:
-                if var in conn:
-                    valids[var] = False
+            if conn:
+                for var in varnames:
+                    if var in conn:
+                        valids[var] = False
 
         # this assumes that all outputs are either valid or invalid
         if not force and outs and (valids[outs[0]] is False):
