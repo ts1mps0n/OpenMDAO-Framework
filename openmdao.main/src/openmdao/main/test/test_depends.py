@@ -2,10 +2,11 @@
 
 import unittest
 import logging
+import math
 import nose
 
 from openmdao.main.api import Assembly, Component, Driver, set_as_top, Dataflow
-from openmdao.lib.datatypes.api import Int, Array
+from openmdao.lib.datatypes.api import Float, Int, Array
 from openmdao.main.hasobjective import HasObjectives
 from openmdao.main.hasconstraints import HasConstraints
 from openmdao.main.hasparameters import HasParameters
@@ -22,10 +23,10 @@ class DumbDriver(Driver):
 
 
 class Simple(Component):
-    a = Int(iotype='in')
-    b = Int(iotype='in')
-    c = Int(iotype='out')
-    d = Int(iotype='out')
+    a = Float(iotype='in')
+    b = Float(iotype='in')
+    c = Float(iotype='out')
+    d = Float(iotype='out')
     
     def __init__(self):
         super(Simple, self).__init__()
@@ -357,10 +358,10 @@ class DependsTestCase(unittest.TestCase):
         sub.driver.add_objective('comp5.d')
         self.assertEqual(sub.driver._get_required_compnames(),
                          set(['comp6','comp5']))
-        sub.driver.add_parameter('comp1.a')
+        sub.driver.add_parameter('comp1.a', low=0.0, high=10.0)
         self.assertEqual(sub.driver._get_required_compnames(),
                          set(['comp6','comp5','comp1','comp4']))
-        sub.driver.add_parameter('comp3.a')
+        sub.driver.add_parameter('comp3.a', low=0.0, high=10.0)
         self.assertEqual(sub.driver._get_required_compnames(),
                          set(['comp6','comp5','comp1','comp4','comp3']))
 
@@ -630,6 +631,90 @@ class ExprDependsTestCase(unittest.TestCase):
         total = top.sub.comp1.c+top.sub.comp2.c+top.sub.comp3.c
         self.assertEqual(total, top.sub.comp4.a)
 
+    def test_float_exprs(self):
+        global exec_order
+        vnames = ['a','b','c','d']
+        top = _nested_model()
+        top.run()
+        
+        top.sub.connect('comp1.c+sin(3.14)', 'comp4.a')
+        total = top.sub.comp1.c + math.sin(3.14)
+        self.assertEqual(top.sub.comp4.get_valid(vnames), [False, True, False, False])
+        exec_order = []
+        top.run()
+        self.assertEqual(exec_order, ['comp4'])
+        self.assertEqual(top.sub.comp4.get_valid(vnames), [True, True, True, True])
+        self.assertEqual(total, top.sub.comp4.a)
+        
+    def test_slice_exprs(self):
+        global exec_order
+        vnames = ['a[0:2:]','a','b','c','d']
+        top = self.top
+        top.run()
+        top.connect('c1.c[3:]', 'c2.a[0:2]')
+        total = top.c1.c[3:]
+        self.assertEqual(top.c2.get_valid(vnames), [False, True, True, False, False])
+        exec_order = []
+        top.run()
+        self.assertEqual(exec_order, ['c2'])
+        self.assertEqual(top.c2.get_valid(vnames), [True, True, True, True, True])
+        self.assertEqual(list(total), list(top.c2.a[0:2]))
+        
+    def _all_nested_connections(self, obj):
+        """Return a list of all connections from ExprMappers and DepGraphs all the way down."""
+        visited = set()
+        connection_set = set()
+        objstack = [obj]
+        while objstack:
+            obj = objstack.pop()
+            if obj not in visited:
+                visited.add(obj)
+                if isinstance(obj, Assembly):
+                    connection_set.update(obj.list_connections())
+                    connection_set.update(obj._depgraph.list_connections())
+                    connection_set.update(obj._depgraph._depgraph.list_connections())
+                    for name in obj.list_containers():
+                        comp = getattr(obj, name)
+                        if isinstance(comp, Component):
+                            connection_set.update(comp._depgraph.list_connections())
+                            if isinstance(comp, Assembly):
+                                objstack.append(comp)
+        return connection_set
+        
+    def test_connection_cleanup(self):
+        global exec_order
+        vnames = ['a','b','c','d']
+        top = _nested_model()
+        initial_connections = set(top.sub.list_connections())
+        top.run()
+        top.sub.connect('comp1.c+comp2.c+comp3.c', 'comp4.a')
+        self.assertEqual(set(top.sub.list_connections())-initial_connections, 
+                         set([('comp1.c+comp2.c+comp3.c', 'comp4.a')]))
+        top.sub.connect('comp1.c', 'comp3.b')
+        self.assertEqual(set(top.sub.list_connections())-initial_connections, 
+                         set([('comp1.c+comp2.c+comp3.c', 'comp4.a'),('comp1.c','comp3.b')]))
+        top.sub.disconnect('comp1')
+        self.assertEqual(set(top.sub.list_connections())-initial_connections, set())
+        for u,v in self._all_nested_connections(top.sub):
+            self.assertTrue('comp1.' not in u and 'comp1.' not in v)
+        
+    def test_connection_cleanup2(self):
+        top = _nested_model()
+        initial_connections = set(top.sub.list_connections())
+        top.run()
+        top.sub.connect('comp1.c+comp2.c+comp3.c', 'comp4.a')
+        top.sub.connect('comp1.c', 'comp3.b')
+        top.sub.disconnect('comp1.c','comp3.b')
+        self.assertEqual(set(top.sub.list_connections())-initial_connections, 
+                         set([('comp1.c+comp2.c+comp3.c', 'comp4.a')]))
+        self.assertEqual(initial_connections-set(top.sub.list_connections()), 
+                         set())
+        for u,v in self._all_nested_connections(top.sub):
+            self.assertTrue(not ('comp1.c' in u and 'comp3.b' in v))
+
+    def test_bad_exprs(self):
+        top = _nested_model()
+        
 
 if __name__ == "__main__":
     

@@ -22,7 +22,7 @@ from openmdao.main.driver import Driver
 from openmdao.main.attrwrapper import AttrWrapper
 from openmdao.main.rbac import rbac
 from openmdao.main.mp_support import is_instance
-from openmdao.main.expreval import ExprEvaluator
+from openmdao.main.expreval import ConnectedExprEvaluator
 from openmdao.main.printexpr import eliminate_expr_ws, ExprNameTransformer
 from openmdao.util.nameutil import partition_names_by_comp
 from openmdao.main.depgraph import DependencyGraph
@@ -116,7 +116,13 @@ class ExprMapper(object):
     def list_connections(self, show_passthrough=True):
         """Return a list of tuples of the form (outvarname, invarname).
         """
-        return self._depgraph.list_connections(show_passthrough)
+        excludes = set([name for name, data in self._exprgraph.nodes(data=True) 
+                        if data['expr'].refs_parent()])
+        if show_passthrough:
+            return [(u,v) for u,v in self._exprgraph.edges() if not (u in excludes or v in excludes)]
+        else:
+            return [(u,v) for u,v in self._exprgraph.edges() 
+                       if '.' in u and '.' in v and not (u in excludes or v in excludes)]
     
     def get_source(self, dest_expr):
         """Returns the text of the source expression that is connected to the given 
@@ -184,12 +190,13 @@ class ExprMapper(object):
                     except Exception as err:
                         scope.raise_exception("can't connect '%s' to '%s': %s" %
                                              (src, dest, str(err)), RuntimeError)
-        for srcvar in srcvars:
+        srcrefs = srcexpr.refs()
+        for srcref in srcrefs:
             try:
-                self._depgraph.connect(srcvar, destexpr.text, self, expr=srcexpr)
+                self._depgraph.connect(srcref, destexpr.text, self, expr=srcexpr)
             except Exception as err:
                 scope.raise_exception("Can't connect '%s' to '%s': %s" % 
-                                      (srcvar, destvar, str(err)), RuntimeError)
+                                      (srcref, destexpr.text, str(err)), RuntimeError)
             
         if src not in self._exprgraph:
             self._exprgraph.add_node(src, expr=srcexpr)
@@ -228,7 +235,12 @@ class ExprMapper(object):
         """Disconnect the given expressions/variables/components."""
         graph = self._exprgraph
         
-        self._depgraph.disconnect(srcpath, destpath)
+        srcexprs = self.find_referring_exprs(srcpath)
+        for srcp in srcexprs:
+            srcexpr = ConnectedExprEvaluator(srcpath, self._scope)
+            srcrefs = srcexpr.refs()
+            for srcref in srcrefs:
+                self._depgraph.disconnect(srcref, destpath)
         if destpath is None:
             if srcpath in graph:
                 graph.remove_node(srcpath)
@@ -259,18 +271,12 @@ class ExprMapper(object):
             scope.raise_exception("'%s' is already connected to source '%s'" % (dest, self.get_source(dest)),
                                   RuntimeError)
         
-        destexpr = ExprEvaluator(dest, scope, default_getter='get_wrapped_attr')
-        srcexpr = ExprEvaluator(src, scope, default_getter='get_wrapped_attr')
+        destexpr = ConnectedExprEvaluator(dest, scope, default_getter='get_wrapped_attr', 
+                                          is_dest=True)
+        srcexpr = ConnectedExprEvaluator(src, scope, default_getter='get_wrapped_attr')
         
         srccomps = srcexpr.get_referenced_compnames()
         destcomps = destexpr.get_referenced_compnames()
-        destvars = destexpr.get_referenced_varpaths()
-        
-        if len(destvars) != 1:
-            scope.raise_exception("destination expr '%s' does not refer to a single variable." % dest,
-                                  RuntimeError)
-        
-        destvar = destvars.pop()
         
         if destcomps and destcomps.pop() in srccomps:
             scope.raise_exception("Cannot connect '%s' to '%s'. Both refer to the same component." % (src,dest),
@@ -522,8 +528,8 @@ class Assembly (Component):
                 # to call config_changed to notify our driver
                 self.config_changed(update_parent=False)
     
-                destvar = destexpr.get_referenced_varpaths().pop()
-                destcompname, destcomp, destvarname = self._split_varpath(destvar)
+                destref = destexpr.refs().pop()
+                destcompname, destcomp, destvarname = self._split_varpath(destref)
                 
                 outs = destcomp.invalidate_deps(varnames=set([destvarname]), force=True)
                 if (outs is None) or outs:
