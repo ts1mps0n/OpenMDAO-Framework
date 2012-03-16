@@ -23,10 +23,10 @@ class DumbDriver(Driver):
 
 
 class Simple(Component):
-    a = Float(iotype='in')
-    b = Float(iotype='in')
-    c = Float(iotype='out')
-    d = Float(iotype='out')
+    a = Float(iotype='in', units='ft')
+    b = Float(iotype='in', units='ft')
+    c = Float(iotype='out', units='ft')
+    d = Float(iotype='out', units='ft')
     
     def __init__(self):
         super(Simple, self).__init__()
@@ -514,7 +514,33 @@ class DependsTestCase2(unittest.TestCase):
         self.assertEqual(s.d2.x[0,1], 1)
         self.assertEqual(s.d2.x[1,1], 2)
 
+    def test_units(self):
+        top = self.top
+        top.c2.add("velocity", Float(3.0, iotype='in', units='ft/s'))
+        top.c1.add("time", Float(9.0, iotype='out', units='s'))
         
+        try:
+            top.connect('c1.c', 'c2.velocity')
+        except Exception as err:
+            self.assertEqual(str(err), ": can't connect 'c1.c' to 'c2.velocity': velocity: units 'ft' are incompatible with assigning units of 'ft/s'")
+        else:
+            self.fail("Exception expected")
+        
+        top.c1.a = 1.
+        top.c1.b = 2.
+        top.c1.time = 2.
+        top.connect('c1.c/c1.time', 'c2.velocity')
+        top.run()
+        self.assertEqual(top.c2.velocity, 1.5)
+        
+        try:
+            top.connect('c1.c+c1.time', 'c2.b')
+        except Exception as err:
+            self.assertEqual(str(err), ": can't connect 'c1.c' to 'c2.velocity': velocity: units 'ft' are incompatible with assigning units of 'ft/s'")
+        else:
+            self.fail("Exception expected")
+        
+
 class ArrayComp(Component):
     a = Array([1,2,3,4,5], iotype="in")
     b = Array([1,2,3,4,5], iotype='in')
@@ -637,8 +663,8 @@ class ExprDependsTestCase(unittest.TestCase):
         top = _nested_model()
         top.run()
         
-        top.sub.connect('comp1.c+sin(3.14)', 'comp4.a')
-        total = top.sub.comp1.c + math.sin(3.14)
+        top.sub.connect('comp1.c+sin(3.14)*comp2.c', 'comp4.a')
+        total = top.sub.comp1.c + math.sin(3.14)*top.sub.comp2.c
         self.assertEqual(top.sub.comp4.get_valid(vnames), [False, True, False, False])
         exec_order = []
         top.run()
@@ -728,7 +754,14 @@ class ExprDependsTestCase(unittest.TestCase):
         else:
             self.fail("Exception expected")
             
-            
+        try:
+            top.sub.connect('comp1.c', 'comp4.a(5)')
+        except Exception as err:
+            self.assertEqual(str(err), "bad destination expression 'comp4.a(5)': not assignable")
+        else:
+            self.fail("Exception expected")
+                    
+        
 if __name__ == "__main__":
     
     #import cProfile
