@@ -36,17 +36,17 @@ parameters, objectives, constraints, and coupling variables of the fundamental p
                 
                 #START OF MDAO Problem Definition
                 #Global Des Vars
-                self.add_parameter(("dis1.z1","dis2.z1"),name="z1",low=-10,high=10,start=5.0)
-                self.add_parameter(("dis1.z2","dis2.z2"),name="z2",low=0,high=10,start=2.0)
+                self.add_parameter(("dis1.z1","dis2.z1"), name="z1", low=-10, high=10, start=5.0)
+                self.add_parameter(("dis1.z2","dis2.z2"), name="z2", low=0, high=10, start=2.0)
                 
                 #Local Des Vars 
-                self.add_parameter("dis1.x1",low=0,high=10,start=1.0)
+                self.add_parameter("dis1.x1", low=0, high=10, start=1.0)
                 
                 #Coupling Vars
-                self.add_coupling_var(("dis2.y1","dis1.y1"),name="y1",start=1.0)
-                self.add_coupling_var(("dis1.y2","dis2.y2"),name="y2",start=1.0)
+                self.add_coupling_var(("dis2.y1","dis1.y1"), name="y1", start=1.0)
+                self.add_coupling_var(("dis1.y2","dis2.y2"), name="y2", start=1.0)
                                    
-                self.add_objective('(dis1.x1)**2 + dis1.z2 + dis1.y1 + math.exp(-dis2.y2)',name="obj1")
+                self.add_objective('(dis1.x1)**2 + dis1.z2 + dis1.y1 + math.exp(-dis2.y2)', name="obj1")
                 self.add_constraint('3.16 < dis1.y1')
                 self.add_constraint('dis2.y2 < 24.0')
 
@@ -91,19 +91,19 @@ For the Sellar Problem, the problem formulation is specified as follows:
 
                 #START OF MDAO Problem Definition
                 #Global Des Vars
-                self.add_parameter(("dis1.z1","dis2.z1"),name="z1",low=-10,high=10,start=5.0)
-                self.add_parameter(("dis1.z2","dis2.z2"),name="z2",low=0,high=10,start=2.0)
+                self.add_parameter(("dis1.z1","dis2.z1"), name="z1", low=-10, high=10, start=5.0)
+                self.add_parameter(("dis1.z2","dis2.z2"), name="z2", low=0, high=10, start=2.0)
             
                 #Local Des Vars 
-                self.add_parameter("dis1.x1",low=0,high=10,start=1.0)
+                self.add_parameter("dis1.x1", low=0, high=10, start=1.0)
             
                 #Coupling Vars
                 #you can give simpler names to the global vars
-                self.add_coupling_var(("dis2.y1","dis1.y1"),name="y1",start=1.0)
-                self.add_coupling_var(("dis1.y2","dis2.y2"),name="y2",start=1.0)
+                self.add_coupling_var(("dis2.y1","dis1.y1"), name="y1", start=1.0)
+                self.add_coupling_var(("dis1.y2","dis2.y2"), name="y2", start=1.0)
                                
                 #you can also give names to objectives
-                self.add_objective('(dis1.x1)**2 + dis1.z2 + dis1.y1 + math.exp(-dis2.y2)',name="obj1")
+                self.add_objective('(dis1.x1)**2 + dis1.z2 + dis1.y1 + math.exp(-dis2.y2)', name="obj1")
                 self.add_constraint('3.16 < dis1.y1')
                 self.add_constraint('dis2.y2 < 24.0')
                 
