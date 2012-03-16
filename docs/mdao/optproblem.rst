@@ -20,7 +20,7 @@ parameters, objectives, constraints, and coupling variables of the fundamental p
 
 
         from openmdao.main.api import ArchitectureAssembly
-        from openmdao.lib.optproblems.api import Discipline1, Discipline2
+        from openmdao.lib.optproblems.sellar import Discipline1, Discipline2
         
         class SellarProblem(ArchitectureAssembly):
             """ Sellar test problem definition.
@@ -98,9 +98,11 @@ For the Sellar Problem, the problem formulation is specified as follows:
                 self.add_parameter("dis1.x1",low=0,high=10,start=1.0)
             
                 #Coupling Vars
+                #you can give simpler names to the global vars
                 self.add_coupling_var(("dis2.y1","dis1.y1"),name="y1",start=1.0)
                 self.add_coupling_var(("dis1.y2","dis2.y2"),name="y2",start=1.0)
                                
+                #you can also give names to objectives
                 self.add_objective('(dis1.x1)**2 + dis1.z2 + dis1.y1 + math.exp(-dis2.y2)',name="obj1")
                 self.add_constraint('3.16 < dis1.y1')
                 self.add_constraint('dis2.y2 < 24.0')
@@ -132,17 +134,92 @@ All instances of ArchitectureAssembly have a slot called ``architecture`` that l
 MDAO architecture. This is how you configure a specific architecture. To test this out yourself, add 
 the following code to the bottom of the file where you defined the SellarProblem class from above: 
 
-.. 
+::
 
-    if __name__="__main__": 
-
-        from openmdao.lib.architectures.api import IDF, MDF, CO, BLISS, BLISS2000
-
-        #IDF
-        problem = SellarProblem()
-        problem.architectre = IDF()
-        problem.run()
+                if __name__=="__main__": 
+                
+                    from openmdao.lib.architectures.api import IDF, MDF, CO, BLISS, BLISS2000
+                    
+                    def display_results(): 
+                        print "Minimum found at (%f, %f, %f)" % (problem.dis1.z1,
+                                                        problem.dis1.z2,
+                                                        problem.dis1.x1)
+                        print "Couping vars: %f, %f" % (problem.dis1.y1, problem.dis2.y2)
+                        print "Function calls dis1: %d, dis2: %d"%(problem.dis1.exec_count,problem.dis2.exec_count)
+                        print "\n"  
+                
+                    print "Running SellarProblem with IDF"
+                    problem = SellarProblem()
+                    problem.architecture = IDF()
+                    problem.run()
+                    
+                    display_results()
+                    
+                    print "Running SellarProblem with MDF"
+                    problem = SellarProblem()
+                    problem.architecture = MDF()
+                    problem.run()
+                    
+                    display_results()
+                    
+                    print "Running SellarProblem with CO"
+                    problem = SellarProblem()
+                    problem.architecture = CO()
+                    problem.run()
+                    
+                    display_results()
+                    
+                    print "Running SellarProblem with BLISS"
+                    problem = SellarProblem()
+                    problem.architecture = BLISS()
+                    problem.run()
+                    
+                    display_results()
+                    
+                    print "Running SellarProblem with BLISS2000"
+                    problem = SellarProblem()
+                    problem.architecture = BLISS2000()
+                    problem.run()
+                    
+                    display_results()
         
+    
+Running that file you should get results something like the following. The function counts 
+for the results with BLISS2000 may not match exactly. BLISS2000 uses a stochastic process 
+in part of it's optimization process and so if you run the optimization a few times you will 
+see the function counts vary a bit. 
+
+::
+
+                Running SellarProblem with IDF
+                Minimum found at (1.977707, 0.000000, 0.000000)
+                Couping vars: 3.160000, 3.755627
+                Function calls dis1: 60, dis2: 54
+                
+                
+                Running SellarProblem with MDF
+                Minimum found at (1.977639, 0.000000, -0.000001)
+                Couping vars: 3.159999, 3.755278
+                Function calls dis1: 227, dis2: 222
+                
+                
+                Running SellarProblem with CO
+                Minimum found at (1.980130, 0.000000, 0.000707)
+                Couping vars: 3.160001, 3.790079
+                Function calls dis1: 8022, dis2: 9469
+                
+                
+                Running SellarProblem with BLISS
+                Minimum found at (1.981348, 0.000001, -0.000007)
+                Couping vars: 3.173192, 3.762692
+                Function calls dis1: 3808, dis2: 3649
+                
+                
+                Running SellarProblem with BLISS2000
+                Minimum found at (1.955188, 0.000000, 0.079449)
+                Couping vars: 3.160000, 3.730012
+                Function calls dis1: 1176, dis2: 165
+
         
         
 

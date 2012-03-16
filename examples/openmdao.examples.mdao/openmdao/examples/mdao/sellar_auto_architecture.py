@@ -68,8 +68,6 @@ if __name__ == "__main__": # pragma: no cover
     prob.architecture = BLISS() 
     prob.configure()
     
-    prob.driver.recorders = [DBCaseRecorder()]
-    prob.driver.printvars = ['ssa.F[0]+ssa.dF[0][0]*(global_des_vars[0]-dis1.z1)+ssa.dF[0][1]*(global_des_vars[1]-dis1.z2)']
     
     tt = time.time()
     prob.run()
@@ -99,7 +97,6 @@ if __name__ == "__main__": # pragma: no cover
     error = prob.check_solution()
     
     print "\nUsing CO Architecture"
-    print "CONMIN Iterations: ", prob.driver.iter_count 
     print "Minimum found at (%f, %f, %f)" % (prob.dis1.z1,
                                              prob.dis1.z2,
                                              prob.dis1.x1)
@@ -123,8 +120,7 @@ if __name__ == "__main__": # pragma: no cover
     prob.run() 
     
     error = prob.check_solution()
-    print error
-    exit()
+
     print "\nUsing BLISS2000 Architecture"
     print "Major Iterations: ", prob.sysopt.exec_count
     print "Minimum found at (%f, %f, %f)" % (prob.dis1.z1,
