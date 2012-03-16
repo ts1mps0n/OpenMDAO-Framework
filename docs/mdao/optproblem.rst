@@ -83,3 +83,67 @@ analysis codes themselves, any problem definition will consist of the followin f
   #. Objective(s)
   #. Coupling variable pairs
   #. Constraints
+
+For the Sellar Problem, the problem formulation is specified as follows: 
+
+:: 
+
+
+                #START OF MDAO Problem Definition
+                #Global Des Vars
+                self.add_parameter(("dis1.z1","dis2.z1"),name="z1",low=-10,high=10,start=5.0)
+                self.add_parameter(("dis1.z2","dis2.z2"),name="z2",low=0,high=10,start=2.0)
+            
+                #Local Des Vars 
+                self.add_parameter("dis1.x1",low=0,high=10,start=1.0)
+            
+                #Coupling Vars
+                self.add_coupling_var(("dis2.y1","dis1.y1"),name="y1",start=1.0)
+                self.add_coupling_var(("dis1.y2","dis2.y2"),name="y2",start=1.0)
+                               
+                self.add_objective('(dis1.x1)**2 + dis1.z2 + dis1.y1 + math.exp(-dis2.y2)',name="obj1")
+                self.add_constraint('3.16 < dis1.y1')
+                self.add_constraint('dis2.y2 < 24.0')
+                
+Notice that nowhere in the problem formulation is any information about optimizers, 
+solvers, or any other drivers and their associated workflows.  A good way to think 
+about it is that the problem formulation contains all of the information that you 
+actually care about to solve the problem. The specifics of what happens when you try 
+to solve it with a given architecture are a secondary concern, and don't show up in your 
+problem definition. Any problem that you want to solve using one of the automatic 
+architectures has to be defined in the manner we showed you above. 
+
+In the OpenMDAO standard library we have a number of optimization test problems defined 
+for you to try out. These are located in the :ref:`openmdao.lib.optproblems <openmdao.lib.optproblems.api.py>`
+section of the standard library. 
+
+So once you have you problem defined, you can solve it using any of the architectures in the 
+OpenMDAO standard library (or you can define your own architecture to test out). 
+We currently have five architectures implemented: 
+
+ #. IDF
+ #. MDF
+ #. CO
+ #. BLISS 
+ #. BLISS-2000
+ 
+ 
+All instances of ArchitectureAssembly have a slot called ``architecture`` that lets you configure a specific 
+MDAO architecture. This is how you configure a specific architecture. To test this out yourself, add 
+the following code to the bottom of the file where you defined the SellarProblem class from above: 
+
+.. 
+
+    if __name__="__main__": 
+
+        from openmdao.lib.architectures.api import IDF, MDF, CO, BLISS, BLISS2000
+
+        #IDF
+        problem = SellarProblem()
+        problem.architectre = IDF()
+        problem.run()
+        
+        
+        
+
+    
