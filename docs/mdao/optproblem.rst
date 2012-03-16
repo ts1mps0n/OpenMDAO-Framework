@@ -53,3 +53,33 @@ parameters, objectives, constraints, and coupling variables of the fundamental p
 
                 #END OF Sellar Problem Definition
 
+
+The first part of this file imports the same discipline analyses used for the :ref:`IDF <Individual-Design-Feasible-(IDF)>`, 
+:ref:`MDF <Multidisciplinary-Design-Feasible-(MDF)>`, and :ref:`CO <Collaborative-Optimization-(CO)>` tutorials. Next you 
+define the `SellarProblem` class, and add the discipline analyses to it. 
+
+:: 
+
+        from openmdao.main.api import ArchitectureAssembly
+        from openmdao.lib.optproblems.api import Discipline1, Discipline2
+        
+        class SellarProblem(ArchitectureAssembly):
+            """ Sellar test problem definition.
+            Creates a new Assembly with this problem
+                
+            Optimal Design at (1.9776, 0, 0) 
+            Optimal Objective = 3.18339"""
+                
+            def configure(self):         
+                #add the discipline components to the assembly
+                self.add('dis1', Discipline1())
+                self.add('dis2', Discipline2())
+                
+Once you have the components added to the assembly, you can start specifying the problem formulation. Beside the 
+analysis codes themselves, any problem definition will consist of the followin five things: 
+
+  #. Global design values
+  #. Local design values
+  #. Objective(s)
+  #. Coupling variable pairs
+  #. Constraints
