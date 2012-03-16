@@ -13,7 +13,7 @@ more general description of the Sellar Problem that is independent of how you wo
 architecture. 
 
 In OpenMDAO you do this with a special kind of assembly called an *ArchitectureAssembly*. When you define an 
-your *ArchitectureAssembly*, in addition to adding the specifc discipline analyses you also specify the 
+your *ArchitectureAssembly*, in addition to adding the specific discipline analyses you also specify the 
 parameters, objectives, constraints, and coupling variables of the fundamental problem formulation. 
 
 .. testcode:: sellar_architecture_assembly
@@ -76,7 +76,7 @@ define the `SellarProblem` class, and add the discipline analyses to it.
                 self.add('dis2', Discipline2())
                 
 Once you have the components added to the assembly, you can start specifying the problem formulation. Beside the 
-analysis codes themselves, any problem definition will consist of the followin five things: 
+analysis codes themselves, any problem definition will consist of the following five things: 
 
   #. Global design values
   #. Local design values
@@ -116,7 +116,7 @@ problem definition. Any problem that you want to solve using one of the automati
 architectures has to be defined in the manner we showed you above. 
 
 In the OpenMDAO standard library we have a number of optimization test problems defined 
-for you to try out. These are located in the :ref:`openmdao.lib.optproblems <openmdao.lib.optproblems.api.py>`
+for you to try out. These are located in the :ref:`openmdao.lib.optproblems <openmdao.lib.optproblems.api.py>` 
 section of the standard library. 
 
 So once you have you problem defined, you can solve it using any of the architectures in the 
