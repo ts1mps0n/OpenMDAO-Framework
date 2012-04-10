@@ -100,7 +100,12 @@ class FlatHeadCylinder(OptProblem):
         self.K0 = 1.0/120.0 #unit conversion constant
         self.K1 = 1.2 #20% bore spacing 
         self.K2 = 2.0
-        self.K2 = 0.82
+        self.K3 = 0.82
+        self.K4 = 0.83
+        self.K5 = 0.89
+        self.K6 = 0.6
+        self.K7 = 6.5
+        self.K8 = 230.5
         
         self.L1 = 400 #mm
         self.L2 = 200 #mm
@@ -111,11 +116,13 @@ class FlatHeadCylinder(OptProblem):
         self.add('thermo',CylinderThermodynamics())
         
         #global des vars
-        self.add_parameter(['geom.b','thermo.b'],low=0.0,high=200.0,start=82.0,name='b')
+        self.add_parameter(['geom.b','thermo.b'],low=70.0,high=90.0,start=80.0,name='b')
+        self.add_parameter((['geom.d_i','thermo.d_i'],low=25.0,high=50.0,start=40.0,name='d_i')
         
         #local des vars
-        self.add_parameter('thermo.d_i',low = 10.0, high = 100.0, start = 20.0)
-        self.add_parameter('thermo.d_e',low = 10.0, high = 100.0, start = 20.0)
+        self.add_parameter('geom.d_e',low = 25.0, high = 50.0, start = 30.0)
+        self.add_parameter('thermo.c_r',low = 6.0, high = 12.0, start = 10.0)
+        self.add_parameter('thermo.w',low = 5.0, high = 12.0, start = 7.0)
         
         self.add_objective('thermo.BMEP*thermo.w/120')
         
